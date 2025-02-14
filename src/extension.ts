@@ -1,14 +1,10 @@
 import * as vscode from "vscode";
 import { loadStats, saveStats } from "./storage";
-import {
-  getProjectId,
-  formatTime,
-  ProjectStats,
-  getCurrentDate,
-} from "./tracker";
+import { getProjectId, ProjectStats, getCurrentDate } from "./tracker";
 import path from "path";
-import { createStatusBarButtons } from "./statusBarButtons";
-import { StatusBarButton } from "./StatusBarButton";
+import { createFileButton } from "./buttons/fileButton";
+import { createProjectButton } from "./buttons/projectButton";
+import { StatusBarButton } from "./buttons/StatusBarButton";
 
 let projectStats: ProjectStats = {};
 let currentFile: string | undefined;
@@ -29,13 +25,15 @@ export function activate(context: vscode.ExtensionContext) {
 
   projectStats = loadStats();
 
-  buttons = createStatusBarButtons(
+  const projectBtn = createProjectButton(
     projectName,
     () => (projectId ? projectStats[projectId]?.totalCodingTime || 0 : 0),
     () =>
       projectId
         ? projectStats[projectId]?.dailyStats[getCurrentDate()]?.codingTime || 0
-        : 0,
+        : 0
+  );
+  const fileBtn = createFileButton(
     () =>
       projectId && currentFile
         ? projectStats[projectId]?.files[currentFile]?.codingTime || 0
@@ -47,6 +45,8 @@ export function activate(context: vscode.ExtensionContext) {
           ]?.codingTime || 0
         : 0
   );
+
+  buttons = [fileBtn, projectBtn];
 
   vscode.window.onDidChangeActiveTextEditor((editor) => {
     if (editor && editor.document) {
@@ -75,7 +75,7 @@ function switchFile(newFile: string) {
 
   console.log(`[DevTimeTracker] Перемикання на файл: ${newFile}`);
 
-  if (currentFile) {
+  if (interval) {
     clearInterval(interval);
     interval = undefined;
   }
@@ -85,7 +85,6 @@ function switchFile(newFile: string) {
   const currentDate = getCurrentDate();
   const projectPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || "";
 
-  // ✅ **Переконуємось, що проект має всі необхідні дані**
   if (!projectStats[projectId]) {
     console.log(`[DevTimeTracker] Створюємо запис для проєкту ${projectId}`);
     projectStats[projectId] = {
@@ -127,6 +126,10 @@ function switchFile(newFile: string) {
       openTime: 0,
     };
   }
+
+  buttons.forEach((button) => {
+    button.updateTooltip();
+  });
 
   console.log(`[DevTimeTracker] Запускаємо таймер для ${currentFile}`);
 

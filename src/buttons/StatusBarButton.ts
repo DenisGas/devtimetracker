@@ -48,6 +48,14 @@ export class StatusBarButton {
     }
   }
 
+  hide() {
+    this.statusBarItem.hide();
+  }
+
+  show() {
+    this.statusBarItem.show();
+  }
+
   dispose() {
     this.statusBarItem.dispose();
   }

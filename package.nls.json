@@ -1,0 +1,10 @@
+{
+  "extension.displayName": "Developer Time Tracker",
+  "extension.description": "Track time spent on projects and files",
+  "commands.showProjectTime.title": "Show Project Time",
+  "commands.showFileTime.title": "Show File Time",
+  "projectTooltip": "📂 Project: {0}\n🟢 Today: {1}\n🕒 Total: {2}",
+  "fileTooltip": "📄 File: {0}\n🟢 Today: {1}\n🕒 Total: {2}",
+  "today": "Today",
+  "total": "Total"
+}
