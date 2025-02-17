@@ -17,11 +17,11 @@
     "commands": [
       {
         "command": "devtimetracker.showProjectTime",
-        "title": "show Project Time"
+        "title": "%commands.showProjectTime.title%"
       },
       {
         "command": "devtimetracker.showFileTime",
-        "title": "show File Time"
+        "title": "%commands.showFileTime.title%"
       }
     ]
   },
@@ -51,6 +51,7 @@
     "webpack-cli": "^6.0.1"
   },
   "dependencies": {
+    "@vscode/l10n": "^0.0.18",
     "vscode-nls": "^5.2.0"
   }
 }

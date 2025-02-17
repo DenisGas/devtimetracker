@@ -1,12 +1,14 @@
 import * as vscode from "vscode";
-import { loadStats, saveStats } from "./storage";
-import { getProjectId, ProjectStats, getCurrentDate } from "./tracker";
+import { loadStats, saveStats } from "./helper/storage";
+import { getProjectId, getCurrentDate } from "./helper/tracker";
+import { IProjectStats } from "./interfaces/IProjectStats";
 import path from "path";
 import { createFileButton } from "./buttons/fileButton";
 import { createProjectButton } from "./buttons/projectButton";
 import { StatusBarButton } from "./buttons/StatusBarButton";
+import Localization from "./helper/localization";
 
-let projectStats: ProjectStats = {};
+let projectStats: IProjectStats = {};
 let currentFile: string | undefined;
 let interval: NodeJS.Timeout | undefined;
 let projectId: string | undefined;
@@ -14,7 +16,13 @@ let projectName: string | undefined;
 let lastEditTime: number = Date.now();
 let buttons: StatusBarButton[] = [];
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
+  const localization = new Localization(context);
+
+  await localization.init();
+
+  // vscode.window.showInformationMessage(localization.t("hello"));
+
   console.log("DevTimeTracker запущен");
 
   if (vscode.workspace.workspaceFolders) {
@@ -26,6 +34,7 @@ export function activate(context: vscode.ExtensionContext) {
   projectStats = loadStats();
 
   const projectBtn = createProjectButton(
+    localization,
     projectName,
     () => (projectId ? projectStats[projectId]?.totalCodingTime || 0 : 0),
     () =>
@@ -33,7 +42,9 @@ export function activate(context: vscode.ExtensionContext) {
         ? projectStats[projectId]?.dailyStats[getCurrentDate()]?.codingTime || 0
         : 0
   );
+
   const fileBtn = createFileButton(
+    localization,
     () =>
       projectId && currentFile
         ? projectStats[projectId]?.files[currentFile]?.codingTime || 0
@@ -47,6 +58,8 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   buttons = [fileBtn, projectBtn];
+
+  updateButtonVisibility();
 
   vscode.window.onDidChangeActiveTextEditor((editor) => {
     if (editor && editor.document) {
@@ -64,7 +77,46 @@ export function activate(context: vscode.ExtensionContext) {
     switchFile(vscode.window.activeTextEditor.document.fileName);
   }
 
+  vscode.workspace.onDidCloseTextDocument((document) => {
+    if (currentFile && document.fileName === currentFile) {
+      console.log(`[DevTimeTracker] Закрыт файл: ${currentFile}`);
+      stopTrackingFile();
+    }
+  });
+
   context.subscriptions.push(...buttons);
+}
+
+function updateButtonVisibility() {
+  const projectBtn = buttons[1];
+  const fileBtn = buttons[0];
+
+  const projectTotalTime = projectId
+    ? projectStats[projectId]?.totalCodingTime
+    : undefined;
+
+  if (projectTotalTime !== undefined) {
+    projectBtn.updateTooltip();
+    fileBtn.updateTooltip();
+  }
+
+  if (projectId && projectTotalTime !== undefined) {
+    projectBtn.show();
+    currentFile ? fileBtn.show() : fileBtn.hide();
+  } else {
+    projectBtn.hide();
+    fileBtn.hide();
+  }
+}
+
+function stopTrackingFile() {
+  if (interval) {
+    clearInterval(interval);
+    interval = undefined;
+  }
+
+  currentFile = undefined;
+  updateButtonVisibility();
 }
 
 function switchFile(newFile: string) {
@@ -75,13 +127,17 @@ function switchFile(newFile: string) {
 
   console.log(`[DevTimeTracker] Перемикання на файл: ${newFile}`);
 
-  if (interval) {
-    clearInterval(interval);
-    interval = undefined;
+  if (currentFile && currentFile !== newFile) {
+    stopTrackingFile();
   }
 
   currentFile = newFile;
   lastEditTime = Date.now();
+
+  console.log(`currentFile ${currentFile}`);
+
+  updateButtonVisibility();
+
   const currentDate = getCurrentDate();
   const projectPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || "";
 

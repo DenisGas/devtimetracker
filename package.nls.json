@@ -6,5 +6,6 @@
   "projectTooltip": "📂 Project: {0}\n🟢 Today: {1}\n🕒 Total: {2}",
   "fileTooltip": "📄 File: {0}\n🟢 Today: {1}\n🕒 Total: {2}",
   "today": "Today",
-  "total": "Total"
+  "total": "Total",
+  "hello": "Hello, world!"
 }
