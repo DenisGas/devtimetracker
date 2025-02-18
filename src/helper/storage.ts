@@ -4,6 +4,8 @@ import * as os from "os";
 
 const statsFilePath = path.join(os.homedir(), ".devtimetracker", "stats.json");
 
+console.log(`statsFilePath: ${statsFilePath}`);
+
 export function loadStats(): any {
   try {
     if (fs.existsSync(statsFilePath)) {
